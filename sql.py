@@ -8,28 +8,18 @@ a = psycopg.connect(os.getenv("TABLE1"))
 b = psycopg.connect(os.getenv("TABLE2"))
 
 def isUserExist(tg_id):
-    with a.cursor() as cursor:
-        cursor.execute("""SELECT user_id FROM user_ WHERE user_id = %s""", (tg_id,))
-        a.commit()
-        
-def addTask(task):
-    with a.cursor() as cursor:
-        cursor.execute("""INSERT INTO to_do_list (task) VALUES(%s)""", (task,))
-        a.commit()
-        
-def addTime(time, task):
-    with a.cursor() as cursor:
-        cursor.execute("""UPDATE to_do_list SET time_ = %s WHERE task = %s""", (time, task))
-        a.commit()
-        
-def addDate(date, task):
-    with a.cursor() as cursor:
-        cursor.execute("""UPDATE to_do_list SET date_ = %s WHERE task = %s""", (date, task))
-        a.commit()
-        
-def addUser(user):
     with b.cursor() as cursor:
-        cursor.execute("""INSERT INTO user_ (user_name) VALUES(%s)""", (user,))
+        cursor.execute("""SELECT tg_id FROM user_ WHERE tg_id = %s""", (tg_id,))
+        b.commit()
+        user = cursor.fetchone
+        if user == None:
+            pass
+        else:
+            return "Пользователь есть"
+                      
+def addTgIdandName(name, tg_id):
+    with b.cursor() as cursor:
+        cursor.execute("""INSERT INTO user_ (user_name, tg_id)  VALUES(%s, %s)""", (name, tg_id))
         b.commit()
         
 def delTask(del_task):
@@ -45,4 +35,19 @@ def changeTask(change_time):
 def changeDate(change_date):
     with a.cursor() as cursor:
         cursor.execute("""UPDATE to_do_list SET date_ = %s""", (change_date,))
+        a.commit()    
+        
+def addAll(task, time, date):
+    with a.cursor() as cursor:
+        cursor.execute("""INSERT INTO to_do_list (task, time_, date_) VALUES(%s, %s, %s)""", (task, time, date))
         a.commit()
+        
+def addUserId(tg_id, task):
+    with b.cursor() as cursor:
+        cursor.execute("""SELECT user_id FROM user_ WHERE tg_id = %s""", (tg_id,))
+        user_id_t = cursor.fetchone()
+        if user_id_t != None:
+            user_id_f = user_id_t[0]
+            with a.cursor() as cursor2:
+                cursor2.execute("""UPDATE to_do_list SET user_id = %s WHERE task = %s""", (user_id_f, task))
+                a.commit()
