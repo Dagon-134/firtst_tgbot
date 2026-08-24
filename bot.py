@@ -5,7 +5,9 @@ from aiogram.types import Message, CallbackQuery
 from aiogram.filters import Command, CommandStart, CommandObject
 from sql import isUserExist, delTask, changeTask, changeDate, addAll, addTgIdandName, watch
 
-from datetime import datetime, time
+from apscheduler.schedulers.asyncio import AsyncIOScheduler
+
+from datetime import datetime, timedelta
 import pytz
 
 from keyboards import getChange, getMenu, getSome
@@ -26,12 +28,23 @@ class Dialog(StatesGroup):
     confirm = State()
 
 
+scheduler = AsyncIOScheduler(timezone='Europe/Moscow')
+
 load_dotenv()
 
 bot = Bot(token=os.getenv("BOT_TOKEN"))
 dp = Dispatcher()
 
 
+
+async def send_alert(user_id, text):
+    await bot.send_message(
+        chat_id=user_id,
+        text=f"НАПОМИНАНИЕ: {text}"
+    )
+    
+    
+    
 
 @dp.message(CommandStart())
 async def start(message: Message):
@@ -151,7 +164,20 @@ async def startCreate(message: Message, state: FSMContext):
     aware_dt = user_tz.localize(native_dt)
     utc_dt = aware_dt.astimezone(pytz.UTC)
     
-    addAll(task, utc_dt, tg_id)                                                                                                                                                                                                   
+    job_id = f"alert_{message.from_user.id}_{int(utc_dt.timestamp())}"
+        
+    scheduler.add_job(
+        func=send_alert, 
+        trigger='date',
+        run_date=utc_dt,         
+        id=job_id,
+        args=[message.from_user.id, task],
+        replace_existing=True
+    )
+    
+    addAll(task, utc_dt, tg_id, job_id)     
+    
+    await state.clear()                                                                                                                                                                                           
     # Сохранение всего в бд                                                 
 
 
@@ -159,13 +185,18 @@ async def startCreate(message: Message, state: FSMContext):
 
                                                     
 @dp.message(F.text == 'Просмотреть имеющиеся задачи')
-async def watchTask(message: Message, state: FSMContext):
-    data = await state.get_data() 
-    tg_id = data.get('taskId')
-    print(watch(tg_id))
-
+async def watchTask(message: Message):
+    tg_id = message.from_user.id
     
-    await message.answer('Ваши задачи:',
+    result = watch(tg_id)
+    formatted_tasks = [f"{item['task']} - {item['date_and_time']}" for item in result]
+    final_change = []
+    for i in formatted_tasks:
+        i = i.replace(':00+03:00', '')
+        final_change.append(i)
+    fix_result = "\n".join(final_change)
+
+    await message.answer(f'Ваши задачи: {fix_result}',
                              reply_markup=getChange()) 
     
     
@@ -175,7 +206,8 @@ async def watchTask(message: Message, state: FSMContext):
 #                          reply_markup=getSome(int(message.text)))
                                                         
                                                             
-async def main():                                                   
+async def main():
+    scheduler.start()                                                   
     await dp.start_polling(bot)  
     
    

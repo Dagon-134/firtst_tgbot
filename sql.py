@@ -37,14 +37,14 @@ def changeDate(change_date):
         cursor.execute("""UPDATE to_do_list SET date_ = %s""", (change_date,))
         a.commit()    
         
-def addAll(task, date_and_time, tg_id):
+def addAll(task, date_and_time, tg_id, job_id):
     with b.cursor() as cursor:
             cursor.execute("""SELECT user_id FROM user_ WHERE tg_id = %s""", (tg_id,))
             user_id_t = cursor.fetchone()
             if user_id_t != None:
                 user_id_f = user_id_t[0]
                 with a.cursor() as cursor2:
-                    cursor2.execute("""INSERT INTO to_do_list (user_id, task, date_and_time) VALUES(%s, %s, %s)""", (user_id_f, task, date_and_time))
+                    cursor2.execute("""INSERT INTO to_do_list (user_id, task, date_and_time, job_id) VALUES(%s, %s, %s, %s)""", (user_id_f, task, date_and_time, job_id))
                     a.commit()
                 
 def watch(tg_id):
@@ -54,13 +54,12 @@ def watch(tg_id):
         
         if user_id: 
             with a.cursor() as cursor2:
-                cursor2.execute("""SELECT task, time_, date_ FROM to_do_list WHERE user_id = %s""", (user_id,))
+                cursor2.execute("""SELECT task, date_and_time FROM to_do_list WHERE user_id = %s""", (user_id[0],))
                 result = cursor2.fetchall()
                 task = []
                 for i in result:
                     task.append({
                         'task': f"{i[0]}", 
-                        'time': f"{i[1]}", 
-                        'date': f"{i[2]}"
+                        'date_and_time': f"{i[1]}"
                     })
                 return task
