@@ -22,20 +22,44 @@ def addTgIdandName(name, tg_id):
         cursor.execute("""INSERT INTO user_ (user_name, tg_id)  VALUES(%s, %s)""", (name, tg_id))
         b.commit()
         
-def delTask(del_task):
-    with a.cursor() as cursor:
-        cursor.execute("""DELETE FROM to_do_list WHERE task = %s""", (del_task,))
-        a.commit()
+def isTaskExist(task, tg_id):
+    with b.cursor() as cursor:
+            cursor.execute("""SELECT user_id FROM user_ WHERE tg_id = %s LIMIT 1""", (tg_id,))
+            user_id_t = cursor.fetchone()
+            user_id = user_id_t[0]
+            print(user_id)
+            print(task)
+            if user_id_t:
+                with a.cursor() as cursor2:
+                    cursor2.execute("""SELECT task FROM to_do_list WHERE user_id = %s AND task = %s""", (user_id, task))
+                    user_task = cursor2.fetchone()
+                    print(user_task)
+                    if user_task == None:
+                        return None
+                    else:
+                        return 'Задание есть'
         
-def changeTask(change_time):
-    with a.cursor() as cursor:
-        cursor.execute("""UPDATE to_do_list SET time_ = %s""", (change_time,))
-        a.commit()
-        
-def changeDate(change_date):
-    with a.cursor() as cursor:
-        cursor.execute("""UPDATE to_do_list SET date_ = %s""", (change_date,))
-        a.commit()    
+def delTask(task, tg_id):
+    with b.cursor() as cursor:
+        cursor.execute("""SELECT user_id FROM user_ WHERE tg_id = %s""", (tg_id,))
+        user_id_t = cursor.fetchone()
+        user_id = user_id_t[0]
+        if user_id_t:
+            with a.cursor() as cursor2:
+                cursor2.execute("""DELETE FROM to_do_list WHERE user_id = %s AND task = %s""", (user_id, task))
+                a.commit()
+                    
+def changeTimeAndDate(task, date_and_time, tg_id):
+    with b.cursor() as cursor:
+        cursor.execute("""SELECT user_id FROM user_ WHERE tg_id = %s""", (tg_id,))
+        user_id_t = cursor.fetchone()
+        user_id = user_id_t[0]
+        print(task)
+        print(user_id)
+        if user_id_t:
+            with a.cursor() as cursor2:
+                cursor2.execute("""UPDATE to_do_list SET date_and_time = %s WHERE user_id = %s AND task = %s""", (date_and_time, user_id,task))
+                a.commit()
         
 def addAll(task, date_and_time, tg_id, job_id):
     with b.cursor() as cursor:
@@ -63,3 +87,22 @@ def watch(tg_id):
                         'date_and_time': f"{i[1]}"
                     })
                 return task
+            
+            
+def returnJobId(task, tg_id):
+    with b.cursor() as cursor:
+        cursor.execute("""SELECT user_id FROM user_ WHERE tg_id = %s""", (tg_id,))
+        user_id = cursor.fetchone()
+        
+        if user_id:
+            with a.cursor() as cursor2:
+                cursor2.execute("""SELECT job_id FROM to_do_list WHERE user_id = %s AND task = %s""", (user_id[0], task))
+                job_id = cursor2.fetchone()
+                job_id_t = job_id[0]
+                print(job_id_t)
+                
+                if job_id == None:
+                    return 'Ничего нет'
+                
+                else:
+                    return job_id_t

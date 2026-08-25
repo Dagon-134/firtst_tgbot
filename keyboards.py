@@ -20,7 +20,7 @@ def getChange():
     change = InlineKeyboardMarkup(
         inline_keyboard=[
             [InlineKeyboardButton(text='Удалить задачу', callback_data='delTask')],
-            [InlineKeyboardButton(text='Изменить время', callback_data='changeTime'), InlineKeyboardButton(text='Изменить дату', callback_data='changeDate')]
+            [InlineKeyboardButton(text='Изменить время и дату', callback_data='changeDateAndtime')]
         ],
         one_time_keyboard=True
     )
