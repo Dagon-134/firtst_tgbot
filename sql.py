@@ -2,10 +2,12 @@ from dotenv import load_dotenv
 import os
 
 import psycopg
+from psycopg.types.json import Jsonb
 
 load_dotenv()
 a = psycopg.connect(os.getenv("TABLE1"))
 b = psycopg.connect(os.getenv("TABLE2"))
+b = psycopg.connect(os.getenv("TABLE3"))
 
 def isUserExist(tg_id):
     with b.cursor() as cursor:
@@ -68,7 +70,7 @@ def addAll(task, date_and_time, tg_id, job_id):
             if user_id_t != None:
                 user_id_f = user_id_t[0]
                 with a.cursor() as cursor2:
-                    cursor2.execute("""INSERT INTO to_do_list (user_id, task, date_and_time, job_id) VALUES(%s, %s, %s, %s)""", (user_id_f, task, date_and_time, job_id))
+                    cursor2.execute("""INSERT INTO to_do_list (user_id, task, date_and_time, job_id, user_token) VALUES(%s, %s, %s, %s, %s)""", (user_id_f, task, date_and_time, job_id))
                     a.commit()
                 
 def watch(tg_id):
@@ -106,3 +108,26 @@ def returnJobId(task, tg_id):
                 
                 else:
                     return job_id_t
+                
+
+
+def isTokenExist(tg_id):
+    with b.cursor() as cursor:
+        cursor.execute("""SELECT user_token FROM user_ WHERE tg_id = %s""", (tg_id,))
+        token = cursor.fetchone()
+        if token == None:
+            return False
+        else:
+            return True
+        
+        
+def addToken(tg_id, token):
+    with b.cursor() as cursor:
+        cursor.execute("""UPDATE user_ SET user_token = %s WHERE tg_id = %s""", (Jsonb(token), tg_id))
+        b.commit()
+        
+        
+def refreshToken(token_old, token_new):
+    with b.cursor() as cursror:
+        cursror.execute("""UPDATE user_ SET token_ = %s WHERE token_ = %s""", (token_new, token_old))
+        b.commit()

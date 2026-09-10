@@ -3,7 +3,9 @@ from aiogram.fsm.state import State, StatesGroup
 from aiogram import Bot, Dispatcher, F
 from aiogram.types import Message, CallbackQuery
 from aiogram.filters import Command, CommandStart, CommandObject
-from sql import isUserExist, delTask, addAll, addTgIdandName, watch, isTaskExist, changeTimeAndDate, returnJobId
+from sql import isUserExist, delTask, addAll, addTgIdandName, watch, isTaskExist, changeTimeAndDate, returnJobId, isTokenExist, addToken
+
+from calendare import addAllInCalendare
 
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
 
@@ -64,7 +66,7 @@ async def start(message: Message, state: FSMContext):
     name = message.from_user.first_name
     tg_id = message.from_user.id
     if isUserExist(tg_id) == "Пользователь есть":
-        await state.update_data(taskId=tg_id)
+        await state.update_data(userkId=tg_id)
         await state.set_state(Dialog.setId)
         
     else:
@@ -158,10 +160,12 @@ async def startCreate(message: Message, state: FSMContext):
     task = data.get('taskName')
     date = data.get('taskDate')                                                 
     time = data.get('taskTime')  
-    tg_id = data.get('taskId')   
+    tg_id = data.get('userId')   
     
     user_tz_str = 'Europe/Moscow'
     user_tz = pytz.timezone(user_tz_str)
+    
+    
     
     native_dt = datetime(int(date[6] + date[7] + date[8] + date[9]), int(date[3] + date[4]), int(date[0] + date[1]), int(time[0] + time[1]), int(time[3] + time[4]))
     aware_dt = user_tz.localize(native_dt)
@@ -177,8 +181,10 @@ async def startCreate(message: Message, state: FSMContext):
         args=[message.from_user.id, task],
         replace_existing=True
     )
+ 
+    addAllInCalendare(task, utc_dt, tg_id)
     
-    addAll(task, utc_dt, tg_id, job_id)     
+    addAll(task, utc_dt, tg_id, job_id)
     
     await state.clear()                                                                                                                                                                                           
     # Сохранение всего в бд                                                 
