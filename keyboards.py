@@ -6,8 +6,8 @@ def getMenu():
     
     menu = ReplyKeyboardMarkup(
         keyboard=[
-            [KeyboardButton(text='Создать задачу')],
-            [KeyboardButton(text='Просмотреть имеющиеся задачи')]
+            [KeyboardButton(text='📖Создать задачу')],
+            [KeyboardButton(text='🗂Просмотреть имеющиеся задачи')]
         ],
         resize_keyboard=True, one_time_keyboard=True
     )
@@ -19,10 +19,11 @@ def getChange():
     
     change = InlineKeyboardMarkup(
         inline_keyboard=[
-            [InlineKeyboardButton(text='Удалить задачу', callback_data='delTask')],
-            [InlineKeyboardButton(text='Изменить время и дату', callback_data='changeDateAndtime')]
+            [InlineKeyboardButton(text='✂️Удалить задачу', callback_data='delTask')],
+            [InlineKeyboardButton(text='🗑Удалить все задачи', callback_data='delAll')],
+            [InlineKeyboardButton(text='⏰Изменить время и дату', callback_data='changeDateAndtime')]
         ],
-        one_time_keyboard=True
+        one_time_keyboard=True, resize_keyboard=True
     )
     
     return change
@@ -34,3 +35,28 @@ def getSome(chislo):
     # rkb.adjust(*[3 for i in range(chislo//3 + 1)])
     rkb.adjust(3, repeat=True)
     return rkb.as_markup(resize_keyboard=True, one_time_keyboard=True) 
+
+def confirm():
+    
+    confirm = InlineKeyboardButton(
+        inline_keyboard=[
+            [InlineKeyboardButton(text='✏️Хочу поменять напоминание', callback_data='changeReminder')],
+            [InlineKeyboardButton(text='✅Оставить выбранное время и дату', callback_data='nothingGhange')]
+        ],
+        one_time_keyboard=True, resize_keyboard=True
+    )
+    
+    return confirm
+
+def RightorNot():
+    
+    answers = ReplyKeyboardMarkup(
+        keyboard=[
+            [KeyboardButton(text='✅Всё правильно')],
+            [KeyboardButton(text='⏰Хочу поменять дату'), KeyboardButton(text='📅Хочу поменять дату')],
+            [KeyboardButton(text='📝Изменить задание')]
+        ],
+        one_time_keyboard=True, resize_keyboard=True
+    )
+    
+    return answers

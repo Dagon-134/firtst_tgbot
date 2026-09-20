@@ -15,14 +15,27 @@ import asyncio
 # SCOPES = ["https://www.googleapis.com/auth/calendar"]
 # creds = None
 
-def addAllInCalendare(task, date_and_time, tg_id):
+def addAllInCalendare(task: str, date_and_time: datetime, tg_id: int):
     SCOPES = ["https://www.googleapis.com/auth/calendar"]
-    creds = isTokenExist(tg_id)
-    if creds == False:
+    creds = None
+    token = isTokenExist(tg_id)
+    token = json.loads(token)
+    if token is not None:
+            
+        creds = Credentials.from_authorized_user_info(token, SCOPES)
+    if not creds or not creds.valid:
+        if creds and creds.expired and creds.refresh_token:
+            creds.refresh(Request())
+            
+            refreshToken(tg_id, creds.to_json())
+        
+        else:
             flow = InstalledAppFlow.from_client_secrets_file(
                 "credentials.json", SCOPES
-            )
+                    )
             creds = flow.run_local_server(port=0)
+            token = creds.to_json()
+            addToken(tg_id, token)
     try:
         date_and_time2 = date_and_time + timedelta(hours=1)
         service = build("calendar", "v3", credentials=creds)
@@ -44,8 +57,3 @@ def addAllInCalendare(task, date_and_time, tg_id):
     except HttpError as error:
         print(f"An error occurred: {error}")
         
-    creds = creds.to_json()
-    print(creds)
-    creds = json.dumps(creds)
-    print(creds)
-    addToken(tg_id, creds)
