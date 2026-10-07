@@ -38,7 +38,7 @@ def getSome(chislo):
 
 def confirm():
     
-    confirm = InlineKeyboardButton(
+    confirm = InlineKeyboardMarkup(
         inline_keyboard=[
             [InlineKeyboardButton(text='✏️Хочу поменять напоминание', callback_data='changeReminder')],
             [InlineKeyboardButton(text='✅Оставить выбранное время и дату', callback_data='nothingGhange')]
@@ -53,7 +53,7 @@ def RightorNot():
     answers = ReplyKeyboardMarkup(
         keyboard=[
             [KeyboardButton(text='✅Всё правильно')],
-            [KeyboardButton(text='⏰Хочу поменять дату'), KeyboardButton(text='📅Хочу поменять дату')],
+            [KeyboardButton(text='⏰Хочу поменять время'), KeyboardButton(text='📅Хочу поменять дату')],
             [KeyboardButton(text='📝Изменить задание')]
         ],
         one_time_keyboard=True, resize_keyboard=True
