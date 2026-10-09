@@ -14,7 +14,7 @@ class Reminder:
     def __init__(self, bot):
         self.bot = bot
         
-    async def send_alert(user_id, text):
+    async def send_alert(self, user_id, text):
         await bot.send_message(
             chat_id=user_id,
             text=f"НАПОМИНАНИЕ: {text}"

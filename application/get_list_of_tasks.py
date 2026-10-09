@@ -2,7 +2,7 @@ from sql import watch
 
 class what_we_have:
     
-    def get_tasks1(tg_id):
+    def get_tasks1(self, tg_id):
         result = watch(tg_id)
         formatted_tasks = [f"{item['task']} - {item['date_and_time']}" for item in result]
         final_change = []
@@ -13,7 +13,7 @@ class what_we_have:
         
         return fix_result
     
-    def get_tasks2(list):
+    def get_tasks2(self, list):
         formatted_tasks = [f"{item['time']} - {item['task']}" for item in list]
         final_change = []
         for i in formatted_tasks:

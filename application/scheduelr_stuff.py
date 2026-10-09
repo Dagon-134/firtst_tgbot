@@ -24,7 +24,12 @@ class scheduler_job:
         )
         return job_id
 
-    async def change_job(task, tg_id, native_dt):
+    async def change_job(self, task, tg_id, native_dt) -> False | True:
         find_job_id = returnJobId(task, tg_id)
         job = scheduler.get_job(find_job_id)
-        job.reschedule(trigger='date', run_date=native_dt)
+        
+        if job is None:
+            return False
+        else:
+            job.reschedule(trigger='date', run_date=native_dt)
+            return True

@@ -22,11 +22,9 @@ dp = Dispatcher()
 async def main():
     await bot.delete_webhook(drop_pending_updates=True)
     dp.include_router(rt_handler)
-    job_manager = scheduler_job(bot)
-    dp['main_functions'] = createTask
-    dp['all_tasks'] = what_we_have
-    dp['scheduler'] = scheduler_job
-    dp['remind'] = Reminder
+    dp['main_functions'] = createTask()
+    dp['all_tasks'] = what_we_have()
+    dp['scheduler'] = scheduler_job(bot)
     scheduler.start()                                                   
     await dp.start_polling(bot)                                   
                                                     

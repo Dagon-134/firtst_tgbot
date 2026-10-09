@@ -35,7 +35,9 @@ def isTaskExist(task: str, tg_id: int) -> True | False:
                     user_task = cursor2.fetchone()
                     print(user_task)
                     if user_task is not None:
+                        print('есть задача')
                         return True
+    print('нет задачи')
     return False
         
 def delTask(task: str, tg_id: int):
@@ -98,8 +100,9 @@ def returnJobId(task: str, tg_id: int) -> str | None:
                 job_id_t = job_id[0]
                 print(job_id_t)
                 
-                if job_id is not None:
+                if job_id_t is not None:
                     return job_id_t
+    print('нет id')
     return None
                 
 

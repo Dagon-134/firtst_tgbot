@@ -14,7 +14,6 @@ from keyboards import getChange, getMenu, confirm, RightorNot
 
 from application.create_task import createTask
 from application.get_list_of_tasks import what_we_have
-
 from application.scheduelr_stuff import scheduler_job
 
 rt_handler = Router()
@@ -61,7 +60,7 @@ async def start(message: Message):
 
 @rt_handler.message(Command('instructions'))
 async def instructions(message: Message):
-    await message.answer(f'🤖Я бот напоминалка, а эта команда вызывают инструкцию, если вдруг ты запутаешся в использование бота. \n\nНачнём с основы, если ты хочешь создать новое задание, то нажми на команду /start, после чего нажми на кнопку "Создать задачу".\n\nПо той же команде ты сможешь просмотреть вс свои имеющиеся на данный момент задачи. \nЕсли у тебя есть просроченные или потеренные во времени задачи, то ты просто можешь их удалить. \n\n Потеренные задачи - это те задачи, которые потерялись из-за того, что ты отключил бота или заблокировал, а потом вернулся. \n\n❗️Если ты хочешь, чтобы твои задачи не терялись, то просто не нужно удалять бота❗️')
+    await message.answer(f'🤖Я бот напоминалка, а эта команда вызывают инструкцию, если вдруг ты запутаешся в использование бота. \n\nНачнём с основы, если ты хочешь создать новое задание, то нажми на команду /start, после чего нажми на кнопку "Создать задачу".\n\nПо той же команде ты сможешь просмотреть все свои имеющиеся на данный момент задачи. \nЕсли у тебя есть просроченные или потеренные во времени задачи, то ты просто можешь их удалить. \n\n Потеренные задачи - это те задачи, которые потерялись из-за того, что ты отключил бота или заблокировал, а потом вернулся. \n\n❗️Если ты хочешь, чтобы твои задачи не терялись, то просто не нужно удалять бота❗️')
 
 
 
@@ -146,9 +145,14 @@ async def startCreate(message: Message, state: FSMContext, main_functions: creat
     date = data.get('taskDate')                                                 
     time = data.get('taskTime')  
     tg_id = data.get('userId')   
-
-    date_time, native_dt = main_functions.get_time(time, date)
     
+    try:
+        date_time, native_dt = main_functions.get_time(time, date)
+        
+    except TypeError:
+        await message.answer(f'❌Введенна не верная дата или время \n\n❗️Введите дату дедлайна в формате DD.MM.YYYY')
+        await state.set_state(Dialog.setDate)
+        
     check_time = isDateTimeExist(date_time, tg_id)
     if check_time is not None:
         fix_result = all_tasks.get_tasks2(check_time)
@@ -195,19 +199,27 @@ async def cancel(callback: CallbackQuery, state: FSMContext, main_functions: cre
     time = data.get('taskTime')  
     tg_id = data.get('userId')   
     
-    date_time, native_dt = main_functions.get_time(time, date)
     
-    if date_time == False:
+    try:
+        date_time, native_dt = main_functions.get_time(time, date)
+        
+    except TypeError:
         await callback.answer(f'❌Введенна не верная дата или время \n\n ❗️Введите дату дедлайна в формате DD.MM.YYYY')
         await state.set_state(Dialog.setDate)
-    
+        
     else:
-        job = await scheduler.create_job(tg_id, date_time, task)
-                
-        addAll(task, date_time, tg_id, job)
-        addAllInCalendare(task, date_time, tg_id)
-        await state.clear()
-        await callback.answer('🟢Данные были сохранены')
+    
+        if date_time == False:
+            await callback.answer(f'❌Введенна не верная дата или время \n\n ❗️Введите дату дедлайна в формате DD.MM.YYYY')
+            await state.set_state(Dialog.setDate)
+        
+        else:
+            job = await scheduler.create_job(tg_id, date_time, task)
+                    
+            addAll(task, date_time, tg_id, job)
+            addAllInCalendare(task, date_time, tg_id)
+            await state.clear()
+            await callback.answer('🟢Данные были сохранены')
     
     
 @rt_handler.callback_query(Dialog.overlap, F.data == 'changeReminder') #Пользователь решил поменять дату и время
@@ -224,7 +236,7 @@ async def accept(callback: CallbackQuery, state: FSMContext):
 @rt_handler.message(F.text == '🗂Просмотреть имеющиеся задачи') #Показывает все задачи, которые есть у пользователя
 async def watchTask(message: Message, all_tasks: what_we_have):
     tg_id = message.from_user.id
-    tasks = all_tasks.get_tasks(tg_id)
+    tasks = all_tasks.get_tasks1(tg_id)
 
     await message.answer(f'Ваши задачи: {tasks}',
                              reply_markup=getChange()) 
@@ -281,7 +293,7 @@ async def start(callback: CallbackQuery, state: FSMContext):
 async def task(message: Message, state: FSMContext):
     task = message.text
     tg_id = message.from_user.id
-    if isTaskExist(task, tg_id) != 'Задание есть':
+    if isTaskExist(task, tg_id) != True:
         await message.answer('🫥Такого задания не существует')
         await state.clear()
     else:
@@ -337,16 +349,26 @@ async def startCreate(message: Message, state: FSMContext, main_functions: creat
     time = data.get('Time')  
     tg_id = message.from_user.id 
     
-    date_time, native_dt = main_functions.get_time(time, date)
+    try:
+        date_time, native_dt = main_functions.get_time(time, date)
     
+    except TypeError:
+        await message.answer(f'❌Введенна не верная дата или время \n\n ❗️Введите дату дедлайна в формате DD.MM.YYYY')
+        await state.set_state(change_time_and_date.setDate)
+
     if date_time < datetime.now(pytz.UTC):
-            await message.answer(f'❌Введенна не верная дата или время \n\n ❗️Введите дату дедлайна в формате DD.MM.YYYY')
-            await state.get_state(Dialog.setDate)
+            await message.answer(f'❌Введенна не верная дата или время \n\n❗️Введите дату дедлайна в формате DD.MM.YYYY')
+            await state.get_state(change_time_and_date.setDate)
     
     else:
-        scheduler.change_job(task, tg_id, native_dt)
-    
-        changeTimeAndDate(task, date_time, tg_id)
-                
-        await message.answer('✳️Время и дата изменнены')
-        await state.clear()     
+        job = await scheduler.change_job(task, tg_id, native_dt)
+        
+        if job == False:
+            await message.answer(f'👣Задача была уже выполнена. \n\n❕Удаляйте задачи, если они они были заданы в прошлом(или вы перезапустили бота), иначе они будут копится у вас в хранилище❕')
+            await state.clear()
+            
+        else:
+            changeTimeAndDate(task, date_time, tg_id)
+                    
+            await message.answer('✳️Время и дата изменнены')
+            await state.clear()     
