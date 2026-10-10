@@ -21,32 +21,18 @@ from datetime import datetime, timedelta
 
 import sys, os
 
-SCOPES = ["https://www.googleapis.com/auth/calendar"]
-creds = None
-if os.path.exists("token.json"):
-    creds = Credentials.from_authorized_user_file("token.json", SCOPES)
-if not creds or not creds.valid:
-    if creds and creds.expired and creds.refresh_token:
-        creds.refresh(Request())
-    else:
-        flow = InstalledAppFlow.from_client_secrets_file(
-            "credentials.json", SCOPES
-        )
-        creds = flow.run_local_server(port=0)
-    with open("token.json", "w") as token:
-        token.write(creds.to_json())
-# date_and_time2 = date_and_time + timedelta(hours=1)
-service = build("calendar", "v3", credentials=creds)
-event = {
-    "summary": f"some",
-    "colorId": 8,
-    "start": {
-        "dateTime": f"2026-09-20T21:09:00",
-        "timeZone": "Europe/Moscow",
-    },
-    "end": {
-        "dateTime": f"2026-09-20T22:09:00",
-        "timeZone": "Europe/Moscow",
-    },
+
+dict = {
+    'user':{
+        'tasks':[
+            {'task':'что', 'time':'10'},
+            {'task':'v', 'time':'1'}
+            ]
+    }
 }
-eventing = service.events().insert(calendarId="primary", body=event).execute()
+
+for i in dict['user']['tasks']:
+    if i['task'] == 'что':
+        i['time'] = '2'
+        
+print(dict)
