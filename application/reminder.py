@@ -7,7 +7,10 @@ import os
 
 load_dotenv()
 
-bot = Bot(token=os.getenv("BOT_TOKEN"))
+bot_url = os.getenv("BOT_TOKEN")
+if bot_url is None:
+    raise ValueError("Переменная окружения BOT_TOKEN не задана!")
+bot = Bot(token=bot_url)
 
 class Reminder:
     

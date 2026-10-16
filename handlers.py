@@ -11,10 +11,11 @@ from datetime import datetime
 import pytz
 
 from keyboards import getChange, getMenu, confirm, RightorNot
-
 from application.create_task import createTask
 from application.get_list_of_tasks import what_we_have
 from application.scheduelr_stuff import scheduler_job
+
+from AI_agent import generate_response
 
 rt_handler = Router()
 
@@ -23,7 +24,10 @@ import os
 
 load_dotenv()
 
-bot = Bot(token=os.getenv("BOT_TOKEN"))
+bot_url = os.getenv("BOT_TOKEN")
+if bot_url is None:
+    raise ValueError("Переменная окружения BOT_TOKEN не задана!")
+bot = Bot(token=bot_url)
 
 class Dialog(StatesGroup):
 
@@ -33,14 +37,6 @@ class Dialog(StatesGroup):
     confirm = State()
     overlap = State()
     choose = State()
-
-
-async def send_alert(user_id, text):
-    await bot.send_message(
-        chat_id=user_id,
-        text=f"НАПОМИНАНИЕ: {text}"
-    )
-    delTask(text, user_id)
     
 
 ###
@@ -48,9 +44,10 @@ async def send_alert(user_id, text):
 ###    
 
 @rt_handler.message(CommandStart())
-async def start(message: Message):
-    await message.answer(text=f'👋Привет, {message.from_user.first_name}, я бот напоминалка. Моя задача принимать твои задачи и время, в которое ты хочешь их выполнить, а потом напомнить тебе о них в нужное время.',
-                         reply_markup=getMenu())
+async def start_bot(message: Message):
+    if message.from_user is not None:
+        await message.answer(text=f'👋Привет, {message.from_user.first_name}, я бот напоминалка. Моя задача принимать твои задачи и время, в которое ты хочешь их выполнить, а потом напомнить тебе о них в нужное время.',
+                            reply_markup=getMenu())
 
 
 
@@ -69,18 +66,19 @@ async def instructions(message: Message):
 ###
 
 @rt_handler.message(F.text == '📖Создать задачу')
-async def start(message: Message, state: FSMContext):
+async def start_create_task(message: Message, state: FSMContext):
     await message.answer('♿️Для того чтобы начать напишите задачу')
-    name = message.from_user.first_name
-    tg_id = message.from_user.id
-    if isUserExist(tg_id) == True:
-        await state.update_data(userId=tg_id)
-        await state.set_state(Dialog.setTask)
-        
-    else:
-        addTgIdandName(name, tg_id)
-        await state.update_data(taskId=tg_id)
-        await state.set_state(Dialog.setTask)
+    if message.from_user is not None:
+        name = message.from_user.first_name
+        tg_id = message.from_user.id
+        if isUserExist(tg_id) == True:
+            await state.update_data(userId=tg_id)
+            await state.set_state(Dialog.setTask)
+            
+        else:
+            addTgIdandName(name, tg_id)
+            await state.update_data(taskId=tg_id)
+            await state.set_state(Dialog.setTask)
 
     
 @rt_handler.message(Dialog.setTask) #Запомним название и перейдём к дате
@@ -138,20 +136,25 @@ async def CreateTime(message: Message, state: FSMContext, main_functions: create
             await message.answer('Напишите что угодно, для подтверждения')
 
 @rt_handler.message(Dialog.confirm) #Всё было правильно - сохраняем в бд(Проверки: 1.Если пользователь ввёл уже существующую дату и время, предложим перенести на другое число или время; 2.Если была введена прошедшая дата, то выберем другую дату)
-async def startCreate(message: Message, state: FSMContext, main_functions: createTask, all_tasks: what_we_have, scheduler: scheduler_job):
+async def final(message: Message, state: FSMContext, main_functions: createTask, all_tasks: what_we_have, scheduler: scheduler_job):
     print('Дошёл до функции')
     data = await state.get_data()
-    task = data.get('taskName')
-    date = data.get('taskDate')                                                 
-    time = data.get('taskTime')  
-    tg_id = data.get('userId')   
+    task = data.get('taskName', 'Без названия')
+    date = data.get('taskDate', '')
+    time = data.get('taskTime', '')
+    tg_id = data.get('userId', 0)   
     
     try:
-        date_time, native_dt = main_functions.get_time(time, date)
+
+        result = main_functions.get_time(time, date)
+        
+        if result is not None:
+            date_time, native_dt = result
         
     except TypeError:
         await message.answer(f'❌Введенна не верная дата или время \n\n❗️Введите дату дедлайна в формате DD.MM.YYYY')
         await state.set_state(Dialog.setDate)
+
         
     check_time = isDateTimeExist(date_time, tg_id)
     if check_time is not None:
@@ -180,7 +183,7 @@ async def all_right(message: Message, state: FSMContext):
     await state.set_state(Dialog.confirm)
     
 @rt_handler.message(Dialog.choose, F.text == '⏰Хочу поменять время')
-async def try_another_date(message: Message, state: FSMContext):
+async def try_another_time(message: Message, state: FSMContext):
     await message.answer('Введите новое время')
     await state.set_state(Dialog.setTime)
     
@@ -248,7 +251,7 @@ class del_Task(StatesGroup): #Класс, для удаления задачи
     setTask = State()  
     
 @rt_handler.callback_query(F.data == 'delTask') #Пользователь выбрал удалить какую-то определённую задачу
-async def start(callback: CallbackQuery, state: FSMContext):
+async def start_dell(callback: CallbackQuery, state: FSMContext):
     await callback.answer('Удаление задачи')
     await callback.message.answer('Чтобы удалить задачу напишите её полностью')
     await state.set_state(del_Task.setTask)
@@ -257,7 +260,7 @@ async def start(callback: CallbackQuery, state: FSMContext):
 async def del_task(message: Message, state: FSMContext):
     task = message.text
     tg_id = message.from_user.id
-    if isTaskExist(task, tg_id) != True:
+    if isTaskExist(task, tg_id) == None:
         await message.answer('Такого задания не существует')
         await state.clear()
     else:
@@ -371,4 +374,29 @@ async def startCreate(message: Message, state: FSMContext, main_functions: creat
             changeTimeAndDate(task, date_time, tg_id)
                     
             await message.answer('✳️Время и дата изменнены')
-            await state.clear()     
+            await state.clear()    
+            
+            
+            
+            
+###
+#ИИ для создания темы
+###
+
+class Settings_AI(StatesGroup):
+    
+    choose_topic = State()
+
+@rt_handler.message(Command('ai'))
+async def start_ai_function(message: Message, state: FSMContext):
+    await message.answer(f'Привет, я AI агента!\n\nЯ здесь, чтобы помочь найти тебе занятие.\nСначала давай определимся с темой.\nНапиши мне чем ты хотел бы заняться, но желательно по подробней.\n\nНапример:\nЯ хочу изчуть какую-то новую тему в сфере космологии, я очень мало чего знаю об этой теме, но она мне интересна, так давай начнём с озов')
+    await state.set_state(Settings_AI.choose_topic)
+    
+@rt_handler.message(Settings_AI.choose_topic)
+async def science(message: Message):
+    user_message = message.text
+    msg = await message.answer('Генерирую тему...')
+    response = await generate_response(user_message)
+    msg.delete()
+    await message.answer(f'{response}')
+    

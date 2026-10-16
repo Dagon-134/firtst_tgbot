@@ -3,7 +3,6 @@ from aiogram import Bot, Dispatcher
 from application.create_task import createTask
 from application.get_list_of_tasks import what_we_have
 from application.scheduelr_stuff import scheduler_job
-from application.reminder import Reminder
 
 from dotenv import load_dotenv
 import os
@@ -16,7 +15,11 @@ from scheduler import scheduler
 
 load_dotenv()
 
-bot = Bot(token=os.getenv("BOT_TOKEN"))
+bot_url = os.getenv("BOT_TOKEN")
+if bot_url is None:
+    raise ValueError("Переменная окружения BOT_TOKEN не задана!")
+bot = Bot(token=bot_url)
+
 dp = Dispatcher()                                           
                                                             
 async def main():

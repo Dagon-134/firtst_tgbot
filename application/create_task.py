@@ -3,7 +3,7 @@ import pytz
 
 class createTask:
         
-    def creat_date(self, date) -> False | True:
+    def creat_date(self, date) -> bool:
         try:
             dt = datetime.strptime(date, "%d.%m.%Y")
             
@@ -13,7 +13,7 @@ class createTask:
         return True
     
         
-    def creat_time(self, time) -> False | True:
+    def creat_time(self, time) -> bool:
         try:
             dt = datetime.strptime(time, "%H:%M")
             
@@ -23,7 +23,7 @@ class createTask:
         return True
     
     
-    def get_time(self, time, date) -> datetime | None:
+    def get_time(self, time, date) -> tuple[datetime, datetime] | None:
         user_tz_str = 'Europe/Moscow'
         user_tz = pytz.timezone(user_tz_str)
         
@@ -35,4 +35,4 @@ class createTask:
             return None
         
         else:
-            return utc_dt, native_dt
+            return (utc_dt, native_dt)

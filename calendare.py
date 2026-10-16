@@ -18,7 +18,7 @@ import asyncio
 def addAllInCalendare(task: str, date_and_time: datetime, tg_id: int):
     SCOPES = ["https://www.googleapis.com/auth/calendar"]
     creds = None
-    token = isTokenExist(tg_id)
+    token: str = isTokenExist(tg_id)
     token = json.loads(token)
     if token is not None:
             
