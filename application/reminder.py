@@ -1,4 +1,4 @@
-from sql import delTask
+from sql import Repo
 
 from aiogram import Bot
 
@@ -18,8 +18,9 @@ class Reminder:
         self.bot = bot
         
     async def send_alert(self, user_id, text):
+        repo = Repo()
         await bot.send_message(
             chat_id=user_id,
             text=f"НАПОМИНАНИЕ: {text}"
         )
-        delTask(text, user_id)
+        repo.delTask(text, user_id)

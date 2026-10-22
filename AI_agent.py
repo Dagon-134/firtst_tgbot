@@ -1,5 +1,7 @@
 from openai import OpenAI
 
+import time
+
 from dotenv import load_dotenv
 import os
 
@@ -11,6 +13,7 @@ AI_token2 = os.getenv("AI_TOKEN2")
 
 async def generate_response(user_message):
     for i in range(10):
+        time.sleep(1)
         try:
             client = OpenAI(
                 base_url="https://openrouter.ai/api/v1",
@@ -32,8 +35,12 @@ async def generate_response(user_message):
                 extra_body={"reasoning": {"enabled": True}},
                 stream=True
             )
-
-            return response.choices[0].message.content
+            full_content = ""
+            for chunk in response:
+                if chunk.choices and chunk.choices[0].delta.content:
+                    full_content += chunk.choices[0].delta.content
+            return full_content
+        
         except Exception as e:
             print(e)
             i += 1

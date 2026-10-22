@@ -1,8 +1,10 @@
 from aiogram import Bot, Dispatcher
 
-from application.create_task import createTask
+from application.create_time import createTime
 from application.get_list_of_tasks import what_we_have
 from application.scheduelr_stuff import scheduler_job
+
+from sql import Repo
 
 from dotenv import load_dotenv
 import os
@@ -25,9 +27,10 @@ dp = Dispatcher()
 async def main():
     await bot.delete_webhook(drop_pending_updates=True)
     dp.include_router(rt_handler)
-    dp['main_functions'] = createTask()
+    dp['main_functions'] = createTime()
     dp['all_tasks'] = what_we_have()
     dp['scheduler'] = scheduler_job(bot)
+    dp['repo'] = Repo()
     scheduler.start()                                                   
     await dp.start_polling(bot)                                   
                                                     
